@@ -20,12 +20,6 @@ Copyright 2015 Google Inc.
   <version>1.0-SNAPSHOT</version>
   <groupId>com.example.appengine</groupId>
   <artifactId>appengine-helloworld</artifactId>
-  <parent>
-    <groupId>com.google.cloud</groupId>
-    <artifactId>appengine-doc-samples</artifactId>
-    <version>1.0.0</version>
-    <relativePath>..</relativePath>
-  </parent>
   <dependencies>
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -42,6 +36,11 @@ Copyright 2015 Google Inc.
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
       <version>20170516</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.3</version>
     </dependency>
   </dependencies>
   <build>
@@ -61,7 +60,7 @@ Copyright 2015 Google Inc.
       <plugin>
         <groupId>com.google.appengine</groupId>
         <artifactId>appengine-maven-plugin</artifactId>
-        <version>${appengine.sdk.version}</version>
+        <version>1.9.54</version>
       </plugin>
     </plugins>
   </build>

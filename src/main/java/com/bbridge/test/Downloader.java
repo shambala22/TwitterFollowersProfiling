@@ -2,6 +2,11 @@ package com.bbridge.test;
 
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.basic.DefaultOAuthConsumer;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,6 +18,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by shambala on 26.08.17.
@@ -30,7 +36,7 @@ public class Downloader {
     }
     private static String authorizationToken;
 
-    public void authorize(final String username, final String password) {
+    void authorize(final String username, final String password) {
         authorizationToken = downloadFromBBridge("http://bbridgeapi.cloudapp.net/v1/auth", new JSONObject() {
             {
                 put("username", username);
@@ -54,24 +60,24 @@ public class Downloader {
         return null;
     }
 
-    public List<Number> getFollowers(String name) {
+    private List<Number> getFollowers(String name) {
         String r = downloadFromTwitter("https://api.twitter.com/1.1/followers/ids.json?screen_name="+name);
-        System.out.println(r);
+        List<Number> result = new ArrayList<>();
+        if (r == null) {
+            return result;
+        }
         JSONObject response = new JSONObject(r);
         JSONArray ids = response.getJSONArray("ids");
-        List<Number> result = new ArrayList<>();
         for (Object id : ids.toList()) {
             result.add((Number) id);
         }
         return result;
     }
 
-    public JSONObject getUserProfiling(Number id) {
+    private JSONObject getUserProfiling(Number id) {
         JSONObject content = new JSONObject();
         String r = downloadFromTwitter("https://api.twitter.com/1.1/statuses/user_timeline.json?user_id="+id.longValue());
-        System.out.println(r);
-        if (!isJSONArrayValid(r)) {
-            System.out.println("omg");
+        if (!isJSONArrayValid(r) || r == null) {
             return null;
         }
         JSONArray response = new JSONArray(r);
@@ -92,35 +98,24 @@ public class Downloader {
         return getBbridgeResponse(requestID.getString("request_id"));
     }
 
-    public boolean isJSONObjectValid(String test) {
-        try {
-            new JSONObject(test);
-        } catch (JSONException ex) {
-            // edited, to include @Arthur's comment
-            // e.g. in case JSONArray is valid as well...
-            return false;
-        }
-        return true;
-    }
-    public boolean isJSONArrayValid(String test) {
+    private boolean isJSONArrayValid(String test) {
         try {
             new JSONArray(test);
         } catch (JSONException ex) {
-            // edited, to include @Arthur's comment
-            // e.g. in case JSONArray is valid as well...
             return false;
         }
         return true;
     }
 
 
-    public JSONArray getFollowersProfiling(String name) {
+    JSONArray getFollowersProfiling(String name) {
         List<Number> followers = getFollowers(name);
         JSONArray result = new JSONArray();
         for (Number id : followers) {
             JSONObject profiling = getUserProfiling(id);
             if (profiling != null) {
-                result.put(getUserProfiling(id));
+                profiling.put("id", id);
+                result.put(profiling);
             }
         }
         return result;
@@ -164,15 +159,17 @@ public class Downloader {
         return null;
     }
 
-    private JSONObject getBbridgeResponse(String id) {
+    JSONObject getBbridgeResponse(String id) {
         try {
-            URL url = new URL("http://bbridgeapi.cloudapp.net/v1/response?id="+id);
-            HttpURLConnection request = (HttpURLConnection) url.openConnection();
-            request.setRequestProperty("Authorization", authorizationToken);
-            request.setRequestMethod("GET");
-            System.out.println(request.getResponseCode());
-            String result = readFromStream(request.getInputStream());
-            request.disconnect();
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpGet request = new HttpGet("http://bbridgeapi.cloudapp.net/v1/response?id="+id);
+            request.setHeader("Authorization", authorizationToken);
+            request.setHeader("Cache-Control", "no-cache");
+            HttpResponse response = client.execute(request);
+            while (response.getStatusLine().getStatusCode() == 204) {
+                response = client.execute(request);
+            }
+            String result = readFromStream(response.getEntity().getContent());
             return new JSONObject(result);
         } catch (IOException e) {
             e.printStackTrace();
@@ -197,7 +194,7 @@ public class Downloader {
         return result.toString();
     }
 
-    public String readFromStream(InputStream is) {
+    String readFromStream(InputStream is) {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(is))) {
             StringBuilder buffer = new StringBuilder();
             String inputLine;
@@ -217,7 +214,7 @@ public class Downloader {
         String first;
         String second;
 
-        public StringPair(String first, String second) {
+        StringPair(String first, String second) {
             this.first = first;
             this.second = second;
         }
