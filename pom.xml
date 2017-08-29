@@ -13,13 +13,12 @@ Copyright 2015 Google Inc.
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<!-- [START pom] -->
 <project>
   <modelVersion>4.0.0</modelVersion>
   <packaging>war</packaging>
   <version>1.0-SNAPSHOT</version>
   <groupId>com.example.appengine</groupId>
-  <artifactId>appengine-helloworld</artifactId>
+  <artifactId>twitter-profiling</artifactId>
   <dependencies>
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -44,7 +43,6 @@ Copyright 2015 Google Inc.
     </dependency>
   </dependencies>
   <build>
-    <!-- for hot reload of the web application -->
     <outputDirectory>${project.build.directory}/${project.build.finalName}/WEB-INF/classes</outputDirectory>
     <plugins>
       <plugin>
@@ -52,11 +50,10 @@ Copyright 2015 Google Inc.
         <version>3.3</version>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>
-      <!-- Parent POM defines ${appengine.sdk.version} (updates frequently). -->
       <plugin>
         <groupId>com.google.appengine</groupId>
         <artifactId>appengine-maven-plugin</artifactId>
@@ -65,4 +62,3 @@ Copyright 2015 Google Inc.
     </plugins>
   </build>
 </project>
-<!-- [END pom] -->

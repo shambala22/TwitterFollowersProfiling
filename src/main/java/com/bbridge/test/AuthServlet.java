@@ -16,6 +16,11 @@ public class AuthServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Downloader downloader = new Downloader();
         JSONObject authParams = new JSONObject(downloader.readFromStream(req.getInputStream()));
-        downloader.authorize(authParams.getString("username"), authParams.getString("password"));
+        String token = downloader.authorize(authParams.getString("username"), authParams.getString("password"));
+        if (token == null) {
+            resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        } else {
+            resp.getWriter().write(new JSONObject().put("token", token).toString());
+        }
     }
 }

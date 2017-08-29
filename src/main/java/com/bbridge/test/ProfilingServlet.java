@@ -14,7 +14,12 @@ public class ProfilingServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String screenName = req.getParameter("screen_name");
-        Writer writer = resp.getWriter();
-        writer.write(new Downloader().getFollowersProfiling(screenName).toString());
+        String token = req.getHeader("Authorization");
+        if (token == null) {
+            resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        } else {
+            Writer writer = resp.getWriter();
+            writer.write(new Downloader(token).getFollowersProfiling(screenName).toString());
+        }
     }
 }

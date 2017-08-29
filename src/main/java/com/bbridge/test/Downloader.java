@@ -7,6 +7,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,6 +19,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by shambala on 26.08.17.
@@ -33,9 +35,16 @@ class Downloader {
     static {
         consumer.setTokenWithSecret(ACCESS_TOKEN, ACCESS_TOKEN_SECRET);
     }
-    private static String authorizationToken;
+    private String authorizationToken;
 
-    void authorize(final String username, final String password) {
+    Downloader() {
+    }
+
+    Downloader(String authorizationToken) {
+        this.authorizationToken = authorizationToken;
+    }
+
+    String authorize(final String username, final String password) {
         JSONObject auth = downloadFromBBridge("http://bbridgeapi.cloudapp.net/v1/auth", new JSONObject() {
             {
                 put("username", username);
@@ -43,8 +52,8 @@ class Downloader {
             }
         });
         if (auth != null) {
-            authorizationToken = auth.getString("token");
-        }
+            return auth.optString("token", null);
+        } else return null;
     }
 
     private String downloadFromTwitter(String inputUrl) {
@@ -97,7 +106,7 @@ class Downloader {
             }
         }
         JSONObject requestID = downloadFromBBridge("http://bbridgeapi.cloudapp.net/v1/profiling/personal", content);
-        return requestID == null ? null : getBbridgeResponse(requestID.getString("request_id"));
+        return requestID == null ? null : getBbridgeResponse(requestID.optString("request_id", null));
     }
 
     private boolean isJSONArrayValid(String test) {
@@ -152,9 +161,9 @@ class Downloader {
         return null;
     }
 
-    JSONObject getBbridgeResponse(String id) {
+    private JSONObject getBbridgeResponse(String id) {
         try {
-            HttpClient client = HttpClientBuilder.create().build();
+            HttpClient client = HttpClientBuilder.create().disableAuthCaching().build();
             HttpGet request = new HttpGet("http://bbridgeapi.cloudapp.net/v1/response?id="+id);
             request.setHeader("Authorization", authorizationToken);
             request.setHeader("Cache-Control", "no-cache");
