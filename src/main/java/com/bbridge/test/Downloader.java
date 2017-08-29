@@ -5,12 +5,12 @@ import oauth.signpost.basic.DefaultOAuthConsumer;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -18,12 +18,11 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by shambala on 26.08.17.
  */
-public class Downloader {
+class Downloader {
     private static final String CONSUMER_KEY = "OHbGB3E5SzqFjjzZgth70bY4X";
     private static final String CONSUMER_SECRET = "8vua0CqABCXyrbs3TJEaSZcsiUemBFtSMUKSm92N2At5D07Gl3";
 
@@ -37,12 +36,15 @@ public class Downloader {
     private static String authorizationToken;
 
     void authorize(final String username, final String password) {
-        authorizationToken = downloadFromBBridge("http://bbridgeapi.cloudapp.net/v1/auth", new JSONObject() {
+        JSONObject auth = downloadFromBBridge("http://bbridgeapi.cloudapp.net/v1/auth", new JSONObject() {
             {
                 put("username", username);
                 put("password", password);
             }
-        }).getString("token");
+        });
+        if (auth != null) {
+            authorizationToken = auth.getString("token");
+        }
     }
 
     private String downloadFromTwitter(String inputUrl) {
@@ -95,7 +97,7 @@ public class Downloader {
             }
         }
         JSONObject requestID = downloadFromBBridge("http://bbridgeapi.cloudapp.net/v1/profiling/personal", content);
-        return getBbridgeResponse(requestID.getString("request_id"));
+        return requestID == null ? null : getBbridgeResponse(requestID.getString("request_id"));
     }
 
     private boolean isJSONArrayValid(String test) {
@@ -124,7 +126,8 @@ public class Downloader {
 
     private JSONObject downloadFromBBridge(String inputUrl, JSONObject jsonData) {
         try {
-            URL url = new URL(inputUrl + (authorizationToken == null ? "" : "?"+getPostDataString(new ArrayList<StringPair>() {
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpPost request = new HttpPost(inputUrl + (authorizationToken == null ? "" : "?"+getPostDataString(new ArrayList<StringPair>() {
                 {
                     add(new StringPair("lang", "en"));
                     add(new StringPair("attr", "gender"));
@@ -135,23 +138,13 @@ public class Downloader {
                     add(new StringPair("attr", "occupation"));
                 }
             })));
-            HttpURLConnection request = (HttpURLConnection) url.openConnection();
-            request.setRequestProperty("Content-type", "application/json");
+            request.setHeader("Content-type", "application/json");
             if (authorizationToken != null) {
-                request.setRequestProperty("Authorization", authorizationToken);
+                request.setHeader("Authorization", authorizationToken);
             }
-            request.setDoInput(true);
-            request.setDoOutput(true);
-            request.setRequestMethod("POST");
-            OutputStream os = request.getOutputStream();
-            os.write(jsonData.toString().getBytes("UTF-8"));
-            os.close();
-            InputStream in = new BufferedInputStream(request.getInputStream());
-            String result = readFromStream(request.getInputStream());
-
-            in.close();
-            request.disconnect();
-
+            request.setEntity(new ByteArrayEntity(jsonData.toString().getBytes("UTF-8")));
+            HttpResponse response = client.execute(request);
+            String result = readFromStream(response.getEntity().getContent());
             return new JSONObject(result);
         }  catch (IOException e) {
             e.printStackTrace();
