@@ -41,6 +41,11 @@ Copyright 2015 Google Inc.
       <artifactId>httpclient</artifactId>
       <version>4.5.3</version>
     </dependency>
+    <dependency>
+      <groupId>com.xebialabs.restito</groupId>
+      <artifactId>restito</artifactId>
+      <version>0.8.2</version>
+    </dependency>
   </dependencies>
   <build>
     <outputDirectory>${project.build.directory}/${project.build.finalName}/WEB-INF/classes</outputDirectory>
@@ -50,8 +55,8 @@ Copyright 2015 Google Inc.
         <version>3.3</version>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>

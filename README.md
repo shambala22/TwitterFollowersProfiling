@@ -1,17 +1,21 @@
-# Google App Engine Standard Environment Hello World Sample
+# Google App Engine Twitter Followers Profiler
 
-This sample demonstrates how to deploy an application on Google App Engine.
+## API Methods
 
-See the [Google App Engine standard environment documentation][ae-docs] for more
-detailed instructions.
+### Authorization (POST)
+<host>/auth
+Content:
+    $ { "username": <bbridge username>,
+    $   "password": <bbridge password> }
+Response:
+    $ { "token": <authorization token> }
 
-[ae-docs]: https://cloud.google.com/appengine/docs/java/
-
-## Setup
-1. Update the `<application>` tag in `src/main/webapp/WEB-INF/appengine-web.xml`
-   with your project name.
-1. Update the `<version>` tag in `src/main/webapp/WEB-INF/appengine-web.xml`
-   with your version name.
+### Profiling (GET)
+<host>/profiling?screen_name=<twitter screen name>
+Header: Authorization - <authorization token>
+Response: 
+    $ [{ "id": <twitter user id>,
+    $    "profiling": <bbridge profiling>(if timeline is public) }]
 
 ## Running locally
     $ mvn appengine:devserver

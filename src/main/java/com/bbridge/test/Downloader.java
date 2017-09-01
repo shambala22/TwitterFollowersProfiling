@@ -7,7 +7,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,12 +18,11 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by shambala on 26.08.17.
  */
-class Downloader {
+public class Downloader {
     private static final String CONSUMER_KEY = "OHbGB3E5SzqFjjzZgth70bY4X";
     private static final String CONSUMER_SECRET = "8vua0CqABCXyrbs3TJEaSZcsiUemBFtSMUKSm92N2At5D07Gl3";
 
@@ -37,14 +35,14 @@ class Downloader {
     }
     private String authorizationToken;
 
-    Downloader() {
+    public Downloader() {
     }
 
-    Downloader(String authorizationToken) {
+    public Downloader(String authorizationToken) {
         this.authorizationToken = authorizationToken;
     }
 
-    String authorize(final String username, final String password) {
+    public String authorize(final String username, final String password) {
         JSONObject auth = downloadFromBBridge("http://bbridgeapi.cloudapp.net/v1/auth", new JSONObject() {
             {
                 put("username", username);
@@ -56,7 +54,7 @@ class Downloader {
         } else return null;
     }
 
-    private String downloadFromTwitter(String inputUrl) {
+    public String downloadFromTwitter(String inputUrl) {
         try {
             URL url = new URL(inputUrl);
             HttpURLConnection request = (HttpURLConnection) url.openConnection();
@@ -71,7 +69,7 @@ class Downloader {
         return null;
     }
 
-    private List<Number> getFollowers(String name) {
+    public List<Number> getFollowers(String name) {
         String r = downloadFromTwitter("https://api.twitter.com/1.1/followers/ids.json?screen_name="+name);
         List<Number> result = new ArrayList<>();
         if (r == null) {
@@ -88,12 +86,12 @@ class Downloader {
     private JSONObject getUserProfiling(Number id) {
         JSONObject content = new JSONObject();
         String r = downloadFromTwitter("https://api.twitter.com/1.1/statuses/user_timeline.json?user_id="+id.longValue());
-        if (!isJSONArrayValid(r) || r == null) {
-            return null;
+        if (r == null || !isJSONArrayValid(r)) {
+            return new JSONObject();
         }
         JSONArray response = new JSONArray(r);
         if (response.toList().isEmpty()) {
-            return null;
+            return new JSONObject();
         }
         for (Object element : response) {
             JSONObject tweet = (JSONObject) element;
@@ -106,7 +104,7 @@ class Downloader {
             }
         }
         JSONObject requestID = downloadFromBBridge("http://bbridgeapi.cloudapp.net/v1/profiling/personal", content);
-        return requestID == null ? null : getBbridgeResponse(requestID.optString("request_id", null));
+        return requestID == null ? new JSONObject() : getBbridgeResponse(requestID.optString("request_id", null));
     }
 
     private boolean isJSONArrayValid(String test) {
@@ -119,21 +117,20 @@ class Downloader {
     }
 
 
-    JSONArray getFollowersProfiling(String name) {
+    public JSONArray getFollowersProfiling(String name) {
         List<Number> followers = getFollowers(name);
         JSONArray result = new JSONArray();
         for (Number id : followers) {
             JSONObject profiling = getUserProfiling(id);
-            if (profiling != null) {
-                profiling.put("id", id);
-                result.put(profiling);
-            }
+            profiling.put("id", id.longValue());
+            result.put(profiling);
+
         }
         return result;
     }
 
 
-    private JSONObject downloadFromBBridge(String inputUrl, JSONObject jsonData) {
+    public JSONObject downloadFromBBridge(String inputUrl, JSONObject jsonData) {
         try {
             HttpClient client = HttpClientBuilder.create().build();
             HttpPost request = new HttpPost(inputUrl + (authorizationToken == null ? "" : "?"+getPostDataString(new ArrayList<StringPair>() {
@@ -161,38 +158,40 @@ class Downloader {
         return null;
     }
 
-    private JSONObject getBbridgeResponse(String id) {
+    private JSONObject getBbridgeResponse(final String id) {
+        /*
         try {
-            HttpClient client = HttpClientBuilder.create().disableAuthCaching().build();
+            HttpClient client = HttpClientBuilder.create().build();
             HttpGet request = new HttpGet("http://bbridgeapi.cloudapp.net/v1/response?id="+id);
             request.setHeader("Authorization", authorizationToken);
             request.setHeader("Cache-Control", "no-cache");
             HttpResponse response = client.execute(request);
-            while (response.getStatusLine().getStatusCode() == 204) {
-                response = client.execute(request);
-            }
             String result = readFromStream(response.getEntity().getContent());
             return new JSONObject(result);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
+        */
+        return new JSONObject() {
+            {
+                put("id", id);
+                put("profiling", "empty");
+            }
+        };
     }
 
     private String getPostDataString(ArrayList<StringPair> params) throws UnsupportedEncodingException{
         StringBuilder result = new StringBuilder();
         boolean first = true;
         for(StringPair entry : params){
-            if (first)
+            if (first) {
                 first = false;
-            else
-                result.append("&");
-
+            } else result.append("&");
             result.append(URLEncoder.encode(entry.first, "UTF-8"));
             result.append("=");
             result.append(URLEncoder.encode(entry.second, "UTF-8"));
         }
-
         return result.toString();
     }
 
