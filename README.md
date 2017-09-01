@@ -3,7 +3,7 @@
 ## API Methods
 
 ### Authorization (POST)
-\[host\]/auth
+**\[HOST\]**/auth
 #### Content:
     { "username": <bbridge username>,
       "password": <bbridge password> }
@@ -11,12 +11,12 @@
     { "token": <authorization token> }
 
 ### Profiling (GET)
-\[host\]/profiling?screen_name=\[twitter screen name\]
+**\[HOST\]**/profiling?screen_name=**\[twitter screen name\]**
 #### Header:
-Authorization - \[authorization token\]
+Authorization - **\[authorization token\]**
 #### Response: 
-    [{ "id": [twitter user id],
-       "profiling": [bbridge profiling](if timeline is public) }]
+    [{ "id": <twitter user id>,
+       "profiling": <bbridge profiling>(if timeline is public) }]
 
 ## Running locally
     $ mvn appengine:devserver
