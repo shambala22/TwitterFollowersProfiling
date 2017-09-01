@@ -4,16 +4,17 @@
 
 ### Authorization (POST)
 \[host\]/auth
-Content:
+#### Content:
    { "username": \[bbridge username\],
     "password": \[bbridge password\] }
-Response:
+#### Response:
     { "token": \[authorization token\] }
 
 ### Profiling (GET)
 \[host\]/profiling?screen_name=\[twitter screen name\]
-Header: Authorization - \[authorization token\]
-Response: 
+#### Header:
+Authorization - \[authorization token\]
+#### Response: 
     \[{ "id": \[twitter user id\],
     "profiling": \[bbridge profiling\](if timeline is public) }\]
 
